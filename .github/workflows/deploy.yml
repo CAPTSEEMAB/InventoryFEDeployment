@@ -1,0 +1,189 @@
+name: Deploy React App to S3 and CloudFront
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+      env:
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
+        VITE_NODE_ENV: production
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Create S3 bucket if not exists
+      run: |
+        aws s3 mb s3://${{ secrets.S3_BUCKET_NAME }} --region ${{ secrets.AWS_REGION }} || echo "Bucket already exists"
+        
+        # Enable static website hosting
+        aws s3 website s3://${{ secrets.S3_BUCKET_NAME }} \
+          --index-document index.html \
+          --error-document index.html
+
+    - name: Deploy to S3
+      run: |
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
+          --delete \
+          --cache-control "public,max-age=31536000,immutable" \
+          --exclude "*.html" \
+          --exclude "service-worker.js"
+        
+        # Upload HTML files with different cache settings
+        aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
+          --delete \
+          --cache-control "public,max-age=0,must-revalidate" \
+          --exclude "*" \
+          --include "*.html" \
+          --include "service-worker.js"
+
+    - name: Set S3 bucket policy for public access
+      run: |
+        # First, disable Block Public Access settings
+        aws s3api put-public-access-block \
+          --bucket ${{ secrets.S3_BUCKET_NAME }} \
+          --public-access-block-configuration "BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+        
+        # Wait a moment for the setting to take effect
+        sleep 5
+        
+        cat > bucket-policy.json << EOF
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::${{ secrets.S3_BUCKET_NAME }}/*"
+            }
+          ]
+        }
+        EOF
+        
+        aws s3api put-bucket-policy \
+          --bucket ${{ secrets.S3_BUCKET_NAME }} \
+          --policy file://bucket-policy.json
+
+    - name: Create CloudFront distribution
+      id: cloudfront
+      run: |
+        # Check if distribution already exists
+        EXISTING_DIST=$(aws cloudfront list-distributions \
+          --query "DistributionList.Items[?Origins.Items[0].DomainName=='${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com'].Id" \
+          --output text)
+        
+        if [ -z "$EXISTING_DIST" ] || [ "$EXISTING_DIST" = "None" ]; then
+          echo "Creating new CloudFront distribution..."
+          
+          cat > cloudfront-config.json << EOF
+        {
+          "CallerReference": "$(date +%s)",
+          "Comment": "Inventory Frontend Distribution",
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "${{ secrets.S3_BUCKET_NAME }}-origin",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "TrustedSigners": {
+              "Enabled": false,
+              "Quantity": 0
+            },
+            "ForwardedValues": {
+              "QueryString": false,
+              "Cookies": {
+                "Forward": "none"
+              }
+            },
+            "MinTTL": 0,
+            "DefaultTTL": 86400,
+            "MaxTTL": 31536000,
+            "Compress": true
+          },
+          "Origins": {
+            "Quantity": 1,
+            "Items": [
+              {
+                "Id": "${{ secrets.S3_BUCKET_NAME }}-origin",
+                "DomainName": "${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com",
+                "CustomOriginConfig": {
+                  "HTTPPort": 80,
+                  "HTTPSPort": 443,
+                  "OriginProtocolPolicy": "http-only"
+                }
+              }
+            ]
+          },
+          "Enabled": true,
+          "DefaultRootObject": "index.html",
+          "CustomErrorResponses": {
+            "Quantity": 1,
+            "Items": [
+              {
+                "ErrorCode": 404,
+                "ResponsePagePath": "/index.html",
+                "ResponseCode": "200",
+                "ErrorCachingMinTTL": 300
+              }
+            ]
+          },
+          "PriceClass": "PriceClass_All"
+        }
+        EOF
+          
+          DISTRIBUTION_ID=$(aws cloudfront create-distribution \
+            --distribution-config file://cloudfront-config.json \
+            --query 'Distribution.Id' \
+            --output text)
+          
+          echo "Created distribution: $DISTRIBUTION_ID"
+          echo "distribution-id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+        else
+          echo "Using existing distribution: $EXISTING_DIST"
+          echo "distribution-id=$EXISTING_DIST" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Invalidate CloudFront cache
+      run: |
+        if [ -n "${{ steps.cloudfront.outputs.distribution-id }}" ]; then
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.cloudfront.outputs.distribution-id }} \
+            --paths "/*"
+          echo "Cache invalidation created for distribution ${{ steps.cloudfront.outputs.distribution-id }}"
+        fi
+
+    - name: Get deployment URLs
+      run: |
+        echo "🚀 Deployment Complete!"
+        echo "S3 Website URL: http://${{ secrets.S3_BUCKET_NAME }}.s3-website-${{ secrets.AWS_REGION }}.amazonaws.com"
+        
+        if [ -n "${{ steps.cloudfront.outputs.distribution-id }}" ]; then
+          CLOUDFRONT_URL=$(aws cloudfront get-distribution \
+            --id ${{ steps.cloudfront.outputs.distribution-id }} \
+            --query 'Distribution.DomainName' \
+            --output text)
+          echo "CloudFront URL: https://$CLOUDFRONT_URL"
+        fi
