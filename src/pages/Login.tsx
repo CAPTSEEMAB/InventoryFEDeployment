@@ -97,7 +97,7 @@ export default function Login() {
           </div>
           <div className="text-center">
             <Link to="/signup" className="text-primary hover:underline font-medium">
-              Create an account
+              Create an account for free
             </Link>
           </div>
         </CardContent>
