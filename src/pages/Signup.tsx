@@ -1,3 +1,4 @@
+// Signup page: create a new account and guide user to email confirmation
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 
+// Signup component: collects name, email and password to register
 export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

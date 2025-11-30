@@ -1,3 +1,4 @@
+// Small API client wrapper for the backend endpoints used by the frontend
 import config from './config';
 
 const API_BASE_URL = config.apiUrl;
@@ -60,6 +61,8 @@ class ApiClient {
   constructor() {
     this.token = localStorage.getItem('auth_token');
   }
+
+  // ApiClient exposes methods to call auth, profile, product and S3 endpoints
 
   setToken(token: string | null) {
     this.token = token;

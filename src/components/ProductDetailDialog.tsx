@@ -1,3 +1,4 @@
+// Read-only dialog presenting detailed product information and history
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Product } from '@/lib/api';
 import { format } from 'date-fns';
@@ -9,6 +10,7 @@ interface ProductDetailDialogProps {
   product: Product | null;
 }
 
+// ProductDetailDialog component: displays product fields and movements
 export function ProductDetailDialog({ open, onOpenChange, product }: ProductDetailDialogProps) {
   if (!product) return null;
 

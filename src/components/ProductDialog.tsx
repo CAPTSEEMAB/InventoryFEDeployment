@@ -1,3 +1,4 @@
+// Dialog form used to create or edit products, including optional stock movements
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ interface ProductDialogProps {
   existingCategories: string[];
 }
 
+// ProductDialog component: controlled modal form for product CRUD
 export function ProductDialog({ open, onOpenChange, product, onSuccess, existingCategories }: ProductDialogProps) {
   const [formData, setFormData] = useState({
     name: '',

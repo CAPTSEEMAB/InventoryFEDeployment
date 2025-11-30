@@ -1,3 +1,4 @@
+// Authentication context: provides login, signup, logout and current user state
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api, User } from '@/lib/api';
 
@@ -11,6 +12,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// AuthProvider wraps the app and exposes auth helpers via context
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -1,3 +1,4 @@
+// Sidebar navigation component used across the dashboard
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Package, LayoutDashboard, User, LogOut, Box, FileText } from 'lucide-react';
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/files', label: 'Files', icon: FileText },
 ];
 
+// Renders the collapsible app sidebar with navigation and logout
 export function AppSidebar() {
   const { user, logout, isLoading } = useAuth();
   const { open } = useSidebar();

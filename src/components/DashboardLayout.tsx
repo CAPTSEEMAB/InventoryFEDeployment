@@ -1,3 +1,4 @@
+// Page layout that shows the sidebar, header and main content of application
 import { useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -9,6 +10,7 @@ const pageLabels: Record<string, { title: string; icon: any }> = {
   '/profile': { title: 'Profile', icon: User },
 };
 
+// Dashboard layout wrapper used by pages to render consistent chrome
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const currentPage = pageLabels[location.pathname] || { title: 'Dashboard', icon: LayoutDashboard };

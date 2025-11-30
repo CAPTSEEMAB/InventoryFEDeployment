@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
+// Tiny in-memory toast manager used by the UI toast components
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
 
@@ -68,6 +69,7 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
+// Reducer that manages toast add/update/dismiss/remove actions
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -162,6 +164,8 @@ function toast({ ...props }: Toast) {
     update,
   };
 }
+
+// Public hook and helper exported for components to use to show/dismiss toasts
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);

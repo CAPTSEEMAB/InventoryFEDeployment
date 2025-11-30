@@ -1,3 +1,4 @@
+// App root: providers, theme, routing and top-level UI providers
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,8 +14,10 @@ import Products from "./pages/Products";
 import Files from "./pages/Files";
 import NotFound from "./pages/NotFound";
 
+// React Query client used across the app
 const queryClient = new QueryClient();
 
+// Root application component that wires providers and routes
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

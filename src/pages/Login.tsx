@@ -1,3 +1,4 @@
+// Login page: authenticate users and redirect to dashboard on success
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Package } from 'lucide-react';
 
+// Login component: form for user sign-in
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +46,7 @@ export default function Login() {
             <Package className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Inventory Shop
+            Inventory Shop - Production
           </CardTitle>
           <CardDescription className="text-base">
             Sign in to manage your inventory
