@@ -210,16 +210,7 @@ export default function Files() {
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => {
-                              setSelectedFile(file.key);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          
                         </div>
                       </TableCell>
                     </TableRow>
