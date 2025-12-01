@@ -4,7 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api, Product } from '@/lib/api';
-import { Plus, Search, Pencil, Trash2, Eye, Package } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Eye, Package, Download } from 'lucide-react';
 import { ProductDialog } from '@/components/ProductDialog';
 import { ProductDetailDialog } from '@/components/ProductDetailDialog';
 import { toast } from 'sonner';
@@ -93,6 +93,21 @@ export default function Products() {
     setDeleteDialogOpen(true);
   };
 
+  const handleExportProducts = () => {
+    // export all products as JSON file
+    const dataStr = JSON.stringify(products, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `products_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Products exported successfully');
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -116,17 +131,28 @@ export default function Products() {
               className="pl-10 h-11"
             />
           </div>
-          <Button
-            onClick={() => {
-              setSelectedProduct(null);
-              setIsDialogOpen(true);
-            }}
-            className="w-full sm:w-auto"
-            size="lg"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Add Product
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              onClick={handleExportProducts}
+              variant="outline"
+              className="w-full sm:w-auto"
+              size="lg"
+            >
+              <Download className="mr-2 h-5 w-5" />
+              Export
+            </Button>
+            <Button
+              onClick={() => {
+                setSelectedProduct(null);
+                setIsDialogOpen(true);
+              }}
+              className="w-full sm:w-auto"
+              size="lg"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Add Product
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-xl border-0 shadow-medium bg-card overflow-hidden animate-fade-in">
