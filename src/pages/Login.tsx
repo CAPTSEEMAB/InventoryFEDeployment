@@ -46,7 +46,7 @@ export default function Login() {
             <Package className="h-8 w-8 text-white" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Inventory Shop - Production
+            Inventory Shop 
           </CardTitle>
           <CardDescription className="text-base">
             Sign in to manage your inventory
